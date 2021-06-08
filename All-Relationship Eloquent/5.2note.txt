@@ -1,0 +1,118 @@
+Post -may have many Tag
+
+Video -may have many Tag
+
+Tag -may have many post ,video
+
+---------------
+post_tag
+   post_id
+   tag_id
+
+video_tag
+   post_id
+   tag_id
+-----------
+or
+----------
+taggables
+   tag_id
+   taggable_id
+   taggable_type
+-----------
+----------------------------
+
+//======
+tables and migrations
+========//
+$ php artisan make:migration create_taggables_table --create=taggable
+
+//taggable table
+Schema::create('taggables', function (Blueprint $table) {
+            $table->biginteger('tag_id');
+            $table->bigInteger('taggable_id');
+            $table->string('taggable_type');
+            // $table->timestamps();
+        });
+
+
+//======
+define relationship
+========//
+//Post and video model
+  public function tags(){
+        //return $this->morphToMany(Tag::class, 'taggable');
+        return $this->morphToMany(Tag::class, 'taggable','taggables');
+             //model, identifier , itermideat_table_name
+    } 
+
+//Tag model
+  public function posts(){
+        return $this->morphedByMany(Post::class, "taggable");
+    }
+    public function videos(){
+        return $this->morphedByMany(Video::class, "taggable");
+    }
+//======
+use
+========//
+ ---
+   //create post, tag and attached the tag to post in taggable  
+    // $post = Post::create([
+    //     'user_id' => 1,
+    //     'title' => 'post title 1'
+    // ]);
+    
+    // $post->tags()->create([
+    //     'name' => 'pyhone'
+    // ]);
+    
+    //attach mathod to create attached the tag to post in taggable 
+    $post = Post::find(1);
+    $tag = Tag::create([
+        'name' => "PHP",
+    ]);
+    $post->tags()->attach($tag);
+
+---
+    // Retrive 
+    $post = Post::find(1);
+    return $post->tags; 
+
+--
+//finding video attaching to the exsitsting tag
+$video = Video::create([
+        'title' => 'video_title 1'
+    ]);
+    $tag = Tag::find(1);
+    $video->tags()->attach($tag);
+
+// Retrive 
+$video = Video::find(1);
+return $video->tags;
+
+//---------- use tag -----//
+
+    $tag = Tag::find(1);
+    //create video attched to tag
+    $tag->videos()->create([
+        'title' => "video title 2"
+    ]);
+    return $tag->posts; //collection of posts attached to tag_id 1 
+    return $tag->videos; //collection of videos attached to tag_id 1
+
+
+//********** Extra **********//
+taggable_type  is using full classname
+eg taggable_type = App\Models\Post we want to save only "Post"
+
+inside boot method of  Provider/appServiceProvider
+
+use Illuminate\Database\Eloquent\Relations\Relation;
+    public function boot()
+    {
+        Relation::morphs([
+            'Post' => \App\Post::class,
+            'Video' => \App\Video::class,
+            ]);
+        }

@@ -1,0 +1,66 @@
+$ php artisan make:middleware underConstruction
+
+/****** GLOBAL *****/
+//=====handle
+ abort(503);
+//register in global
+
+=====error page
+predefine template
+$ php artisan vendor:publish --tag=laravel-errors
+
+/cutsome page
+errors/503.blade.php
+ <h1>This site is under construction</h1>
+
+
+
+/****** Routed *****/
+
+---handle----
+abort(503);
+
+---register---
+'construction' => \App\Http\Middleware\underConstruction::class,
+
+--use----
+Route::view('/report','report')->middleware('construction');
+
+
+
+/****** Grouped *****/
+---handle----
+abort(503);
+
+---register---
+//RoutedMiddleware
+'construction' => \App\Http\Middleware\underConstruction::class,
+
+--use----
+Route::middleware(['construction'])->group(function () {
+    Route::view('/stock','stock');
+    Route::view('/report','report'); 
+});
+
+
+/**** Addtional params  ****/
+ public function handle(Request $request, Closure $next, $role)
+    {
+        if($role === 'guest'){
+            return redirect('/');
+        }
+        return $next($request);
+    }
+Route::view('/dashboard','dashboard')->middleware('role:guest');
+
+
+
+
+
+
+/******  throw exception *****/
+use Symfony\Component\HttpKernel\Exception\HttpException;;
+
+//throw new HttpException(503);
+OR
+//abort(503);

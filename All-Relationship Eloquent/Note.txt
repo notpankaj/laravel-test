@@ -1,0 +1,117 @@
+//******  hasMany *******//
+
+//============
+table migration
+============//
+
+//user table
+  Schema::create('users', function (Blueprint $table) {
+            $table->bigIncrements('id'); //creates bigInteger
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+        });
+
+//address table
+        Schema::create('addresses', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('user_id'); //created by bigIncrements
+            $table->string('country');
+            $table->timestamps();
+        });
+
+//=====
+define relation
+======//
+public function addresses()
+    {
+        return $this->hasMany(Address::class);
+    }
+
+
+//=======
+useing
+======//
+$users = \App\Models\User::all();
+
+    //creating multiple address for user
+    // $users[1]->addresses()->create([
+    //     'country' => 'france'
+    // ]);
+    // dd($users[0]);
+    return $users[0]->addresses;
+    // return view('users.index',['users'=>$users]);
+
+    looping thru
+    @foreach ($users as $user )
+      <h2>{{ $user->name }}</h2>
+      @foreach ($user->addresses as $address )
+            <p>{{ $address->country }}</p>
+      @endforeach
+    @endforeach
+
+//========== ONE MORE EG. using POST 
+
+
+//========
+define relation
+=========//
+//post model :one to one
+     public function user(){
+        return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    //withDefault() METHOD
+     public function user(){
+        return $this->belongsTo(User::class, 'user_id', 'id')
+        ->withDefault([
+            'name' => 'Guest User'
+        ]);
+    }
+: <p>{{ optional($post->user)->name }}</p> //dont need this if withDefault is used 
+
+
+//user model :one to many
+
+ public function posts(){
+        return $this->hasMany(Post::class, 'user_id', 'id');
+ }
+
+//======
+useing
+=======//
+  $users = User::with('posts')->get();
+
+    //create posts for users
+    // $users[0]->posts()->create([
+    //     'title' => "post title 4"
+    // ]);
+    return view('users.index',['users' => $users]);
+
+
+     @foreach ($users as $user )
+               <h2>{{ $user->name }}</h2> 
+               @foreach($user->posts as $post)
+               <p>{{ $post->title }}</p>
+               @endforeach
+            @endforeach
+
+
+//-------- some query related to relationship
+:filter
+// return only those users who have posts 
+ $users = User::has('posts')->with('posts')->get();
+
+// return only those users who have more than 3 posts  
+$users = User::has('posts' ,'>=',3)->with('posts')->get();
+
+//return who's been matched with wildcard
+ $users = User::whereHas('posts',function($query){
+        $query->where('title','like','% 6%');
+    })->with('posts')->get();
+
+//return users who dont have any posts (relation absences)
+$users = User::doesntHave('posts')->with('posts')->get();

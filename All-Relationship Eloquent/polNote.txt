@@ -1,0 +1,136 @@
+Post
+
+video
+
+comment
+ commentable_id  id
+ commentable_type post
+
+ //--------------//
+
+ //========
+table migration
+ =======//
+ //video table
+ Schema::create('videos', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('title');
+            $table->timestamps();
+        });
+
+//comments
+Schema::create('comments', function (Blueprint $table) {
+           $table->bigIncrements('id');
+           $table->text('body');
+           $table->bigInteger('user_id');
+        //    $table->bigInteger('commentable_id');
+        //    $table->string('commentable_type');
+        //one liner
+            $table->morphs('commentable');
+           $table->timestamps();
+        });
+
+
+//==============
+define relation
+===============//
+:with nameing convenction
+
+//post and video model
+  protected $guarded = [];
+  public function comments(){
+        return $this->morphMany(comment::class,'commentable');
+        //model, identifier
+    }
+
+//comment model
+  public function commentable(){
+        return $this->morphTo();
+    }
+
+:without nameing convenction
+//comment model
+  public function subject(){
+        return $this->morphTo('commentable'); //identifier
+        
+    }
+
+
+//=======
+add fake dadata
+=======//
+ // $user1 = User::create([
+    //     'name' => 'user A',
+    //     'email' => 'userA@test.com',
+    //     'password' => Hash::make('12345'),
+    // ]);
+    // $user = User::create([
+    //     'name' => 'Harish',
+    //     'email' => 'harish@example.com',
+    //     'password' => Hash::make('12345'),
+    // ]);
+
+    // $post = Post::create([
+    //     'user_id' => $user->id,
+    //     'title' => 'example post titlt',
+    // ]);
+
+    // //creating comments
+    // $post->comments()->create([
+    //     'user_id' => $user->id,
+    //     'body' => 'comment for post',
+    // ]);
+
+
+
+//=========
+use
+=========//
+//get comments of post 
+$post = Post::find(1);
+    return $post->comments;  //array of comments of post id 1
+
+//add comment to post
+ $post = Post::find(1);
+    // $post->comments()->create([
+    //     'user_id' => 1,
+    //     'body' =>'2nd comment for post'
+    // ]);
+    return $post->comments; //array of comments of post id 1
+
+--------
+
+//add comments of video
+    $video = Video::create([
+        'title' => "example video title"
+    ]);
+    $video->comments()->create([
+        'user_id' => 1,
+        'body' => 'comment for video'
+    ]);
+
+//get comments of video
+$video = Video::find(2);
+    return $video->comments; //collection of comments
+
+
+////fetch commentable model 
+$comment = Comment::find(1);
+    // return $comment; //comment id 1 
+   //dd($comment->commentable); 
+   return $comment->commentable; //get model which this comments belongs to
+
+
+
+//******  morphOne ********/
+//====define relation===//
+//post model
+ public function comment(){
+        return $this
+        ->morphOne(comment::class,'commentable') //model, identifier
+        ->latest();  //return the latest comment
+    }
+
+//use
+$post = Post::find(1);
+    return $post->comment;

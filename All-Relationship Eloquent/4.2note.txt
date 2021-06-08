@@ -1,0 +1,122 @@
+has many througt --pivot
+4.1 project has one to many relation with user
+4.2 project has many to many relation with user
+
+//======
+migration table
+//create pivot
+$ php artisan make:migration create_project_user-table
+
+//create_user  migrtaion
+Schema::create('project_user', function ($table) {
+            $table->bigInteger('project_id');
+            $table->bigInteger('user_id');
+        });
+/**** pivot model as intermideat table ****/ 
+$ php artisan make:model Team
+//then we have extend the pivot model class with pivot
+
+use Illuminate\Database\Eloquent\Relations\Pivot;
+class Team extends Pivot
+{
+    protected $table = "project_user";
+}
+
+
+//==========
+define relation
+========///
+//user model
+    public function projects(){
+        return $this->belongsToMany(Project::class);
+    }
+//project model
+    function users(){
+        return  $this->belongsToMany(User::class);
+     }
+
+
+/**** has many throug pivot table ****/
+//project model
+ public function tasks(){
+        return $this->hasManyThrough(
+            Task::class,
+            Team::class,
+            'project_id', //f.key in pivot table
+            'user_id', //f.key in task table
+            'id', //local key in project table
+            'user_id', //f.key in pivot table
+            
+        );
+    }
+/***** has One throug ****/
+ public function task(){
+        return $this->hasOneThrough(
+            Task::class,
+            Team::class,
+            'project_id', //f.key in pivot table
+            'user_id', //f.key in task table
+            'id', //local key in project table
+            'user_id', //f.key in pivot table       
+        );
+    }
+
+//=======
+add dummy data
+======//
+ $project1 = Project::create([
+        'title' => 'Project A'
+    ]);
+    $project2 = Project::create([
+        'title' => 'Project B'
+    ]);
+
+    $user1 = User::create([
+        'name' => 'user A',
+        'email' => 'userA@test.com',
+        'password' => Hash::make('12345'),
+    ]);
+    $user2 = User::create([
+        'name' => 'user B',
+        'email' => 'userB@test.com',
+        'password' => Hash::make('12345'),
+    ]);
+    $user3 = User::create([
+        'name' => 'user C',
+        'email' => 'userC@test.com',
+        'password' => Hash::make('12345'),
+    ]);
+
+    $project1->users()->attach($user1);
+    $project1->users()->attach($user2);
+    $project1->users()->attach($user3);
+
+    $project2->users()->attach($user1);
+    $project2->users()->attach($user3);
+
+    //create task
+    Task::create([
+        'title' => 'Task A',
+        "user_id" => 1, 
+    ]);
+    Task::create([
+        'title' => 'Task B',
+        "user_id" => 1, 
+    ]);
+    Task::create([
+        'title' => 'Task C',
+        "user_id" => 2, 
+    ]);
+    Task::create([
+        'title' => 'Task D',
+        "user_id" => 3, 
+    ]);
+
+//======
+use
+=======//
+ $project = Project::find(1);
+// return $project->tasks;   //list all task from all users haveing project_id 1
+        
+return $project->task; 
+        

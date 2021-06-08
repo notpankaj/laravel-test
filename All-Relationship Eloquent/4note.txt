@@ -1,0 +1,126 @@
+project 
+
+user
+   project_id
+
+task 
+   user_id
+
+ want to fetch the task using project 
+$project -> task
+
+
+/***** hasMany throught ********/
+//=====
+migration table
+=======//
+//user
+ Schema::create('users', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name');
+            $table->string('email')->unique();
+            $table->bigInteger('project_id');
+            $table->timestamp('email_verified_at')->nullable();
+            $table->string('password');
+            $table->rememberToken();
+            $table->timestamps();
+        });
+
+//project
+   Schema::create('projects', function (Blueprint $table) {
+      $table->bigIncrements('id');
+      $table->string('title');
+      $table->timestamps();
+   });
+
+//task
+ Schema::create('tasks', function (Blueprint $table) {
+      $table->bigIncrements('id');
+      $table->bigInteger('user_id');
+      $table->string('title');
+      $table->timestamps();
+   });
+
+
+//==============
+relationship define
+===============//
+####### Project model
+    function user(){
+        $this->hasMany(User::class);
+    }
+   
+  public function tasks(){
+        return $this->hasManyThrough(Task::class,User::class ,"project_id","user_id");
+         // taks_model ,user_model ,user.project_id ,task.user_id,project.id
+        // has many Task throught User
+    }
+    public function task(){
+        return $this->hasOneThrough(Task::class,User::class ,"project_id","user_id",'id');
+        //same as hasManyThrought just it return single task instend of array of task
+    }
+#######
+//user model
+   public function project(){
+        return $this->belongsTo(Project::class);
+    }
+    
+    public function tasks(){
+        return $this->hasMany(Task::class);
+    }
+
+//task model
+public function user (){
+        return $this->belongsTo(User::class);
+    } 
+
+//============
+add dummmy data
+=============//
+
+ $project = Project::create([
+        'title' => 'Project A'
+    ]);
+
+    $user1 = User::create([
+        'name' => 'user 1',
+        'email' => 'user1@test.com',
+        'password' => Hash::make('12345'),
+        'project_id' => $project->id,
+    ]);
+    $user2 = User::create([
+        'name' => 'user 2',
+        'email' => 'user2@test.com',
+        'password' => Hash::make('12345'),
+        'project_id' => $project->id,
+    ]);
+
+    $task1 = Task::create([
+        'title' => 'task 1 for project 1 by user 1',
+        'user_id' => $user1->id,
+    ]);
+    $task2 = Task::create([
+        'title' => 'task 2 for project 1 by user 1',
+        'user_id' => $user1->id,
+    ]);
+    $task3 = Task::create([
+        'title' => 'task 3 for project 1 by user 2',
+        'user_id' => $user1->id,
+    ]);
+
+
+//==========
+use
+==========
+/****** without hasManyThrough *****/
+$project = Project::find(1);
+    // return $project->user; //all users related to project 1
+    // return $project->user[0]->tasks; //all tasks relate to user[0] that realted to project
+      
+/****** with hasManyThrough *****/
+$project = Project::find(1);
+    return $project->tasks; //all task related to user haveing project_id 1
+
+/****** with hasOneThrough *****/
+$project = Project::find(1);
+return $project->task;

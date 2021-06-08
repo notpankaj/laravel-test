@@ -1,0 +1,17 @@
+syntax :- hasOne(Model_class,f-key,l-key);
+f-key: in 
+l-key : primary key on related table
+
+belongsTo(Model_class,f-key,owner-key)
+
+
+//----------
+has on thru
+
+table ,intermediate_table, mechanic_id, car_id id id
+
+mechanic_id f-ket on cars table
+car_id f-ket on owner table
+id l key on  mechanic
+id l key on cars
+

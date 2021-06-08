@@ -1,0 +1,149 @@
+//Post - may have many tags
+
+//Tag - may have may post
+
+//pivot table
+$ php artisan make:migration create_post_tag_table --create=post_tag
+
+
+//*******  Post belongs to many tags  ********/
+
+//=======
+$table migration 
+========//
+//post table
+Schema::create('posts', function (Blueprint $table) {
+            $table->id();
+            $table->bigInteger('user_id')->nullable();
+            $table->string('title');
+            $table->timestamps();
+        });
+
+//tag table
+Schema::create('tags', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->string('name');
+            $table->timestamps();
+
+        });
+//post_tag table (pivot)
+Schema::create('post_tag', function (Blueprint $table) {
+            $table->bigIncrements('id');
+            $table->bigInteger('post_id');
+            $table->bigInteger('tag_id');
+            $table->timestamps();
+        });
+
+//=====
+define relationshp
+======//
+
+//Post Model
+    public function tags(){      
+        return $this->belongsToMany(Tag::class, 'post_tag', 'post_id', 'tag_id');
+        //(Model_class, 'table_name', 'parent_id' , 'key_associatewith_model' );
+    }
+
+
+
+//====
+use
+====//
+////add data to pivot table
+////insted of save(),delete() //attach(),detach() incase of n2n
+
+//----add single item to pivot
+// tag obj
+    $tag = Tag::first();
+// post obj
+    $post = Post::first();
+// $post->tags()->attach($tag); //tag obj or tag id
+    $post->tags()->attach($tag->id); 
+//
+
+////egrload selection 
+$post = Post::with('tags')->first();
+dd($post);
+
+//----add multi data to pivot
+//  $post->tags()->attach([3,2]);  //id or tag obj
+
+//----delete tag of post;
+$post = Post::first();
+    $post->tags()->detach([1,3]);
+
+//----update tag of post
+$post = Post::first();
+    //$post->tags()->detach(); //removes all
+    //$post->tags()->attach([1,3]); //adds new
+    $post->tags()->sync([1,3]);  //on liner for remove old and add new 
+    $posts=Post::all();
+
+//*******  Inverse tag belongsToMany post  ********/
+
+//====
+define
+=====//
+//tag model
+ $public function posts(){
+      //return  $this->belongsToMany(Post::class);
+      return $this->belongsToMany(Post::class, 'post_tag' ,'tag_id','post_id');
+    }
+
+//=====use
+   $tags = Tag::first();
+   return $tags->posts;
+======//
+
+
+//*************  3.2: Adding & Retrieving Pivot Table Columns in Many To Many   *************//
+//======
+enable $timestamps for Pivot table
+========//
+//post model
+  public function tags(){
+        return $this
+            ->belongsToMany(Tag::class, 'post_tag', 'post_id', 'tag_id')
+            ->withTimestamps();
+    }
+
+
+//access created_at , updated_at
+
+    $post = Post::find('10');
+    // dd($post); //attributes will have $timestamps from posts table
+    // dd($post->tags); //attributes will have $timestamps from tags table
+    //  dd($post->tags[0]->pivot->created_at); //return data from pivot table
+    //  dd($post->tags[0]->pivot->updated_at); //return data from pivot table
+
+    return $post->tags[0]->pivot->updated_at;
+
+
+//======
+add addional field to piviot table
+========//
+//piviot table migration
+//add new field
+$table->string('status'); //then migrate
+
+//add data to pivot table 
+$post = Post::first();
+$post->tags()->attach([
+   1 => [
+         'status' => 'approved'
+   ]
+]);
+        
+dd($post->tags()->first()->pivot); //attribute will have missing status value
+
+//to set withPivot() in model post 
+public function tags(){
+   return $this
+         ->belongsToMany(Tag::class, 'post_tag', 'post_id', 'tag_id')
+         ->withTimestamps();
+         ->withPivot('status'); // this retun also
+}
+
+dd($post->tags()->first()->pivot->status); //now it will return all fields value
+
+//*******  3.3 Handle evnets on attach detach sync in MayToMany *******//

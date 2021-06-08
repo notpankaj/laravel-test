@@ -1,0 +1,14 @@
+
+belongsToMany()
+
+model class    
+intermideat table
+f-key , forekey name of model on which you are defining the relationship
+fkey , forekey name of model tahy you are joining
+
+inverser
+belongsToMany
+
+php artisan make:model SingerSong -m
+Model created successfully.
+Created Migration: 2021_06_07_154439_create_singer_songs_table
